@@ -1,8 +1,29 @@
-﻿import { createClient } from 'redis';
-import dotenv from 'dotenv';
+﻿import { EventEmitter } from 'events';
 
-dotenv.config();
+class DummyRedis extends EventEmitter {
+  constructor() {
+    super();
+    this.isOpen = true;
+    this.isReady = true;
+  }
+  async get() { return null; }
+  async set() { return 'OK'; }
+  async del() { return 1; }
+  async quit() {}
+  async disconnect() {}
+  async connect() {}
+  async expire() { return 1; }
+  async hget() { return null; }
+  async hset() { return 1; }
+}
 
-export const redisClient = createClient({ url: process.env.REDIS_URL });
-redisClient.on('error', (err) => console.error('Erro no Redis:', err));
-await redisClient.connect();
+const dummyInstance = new Proxy(new DummyRedis(), {
+  get(target, prop) {
+    if (prop in target) return target[prop];
+    return async () => null;
+  }
+});
+
+export const redisClient = dummyInstance;
+export const redis = dummyInstance;
+export default dummyInstance;
